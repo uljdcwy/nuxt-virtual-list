@@ -20,7 +20,7 @@ npm run dev
 
 ## 动态高度实现（设计说明）
 在组件中已保留设计注释。关键点：
-1. 使用 `ResizeObserver` 或 `offsetHeight` 在项挂载时测量并缓存 `Map<id,height>`
+1. 使用 `ResizeObserver` 或 `offsetHeight` 在项挂载时测量
 2. 维护前缀和数组（或分段前缀）以在 `scrollTop` 下通过二分快速定位索引
 3. 初始用 `avgHeight` 估算未知项，后续按真实测量调整并微调 `scrollTop` 保持滚动体验
 
