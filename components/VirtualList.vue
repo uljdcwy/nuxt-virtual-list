@@ -1,10 +1,13 @@
 <template>
-  <div ref="root" class="virtual-list-root" @scroll="onScroll" :style="{ overflowY: 'auto', height: containerHeight + 'px' }">
+  <div ref="root" class="virtual-list-root" @scroll="onScroll"
+    :style="{ overflowY: 'auto', height: containerHeight + 'px' }">
     <div :style="{ height: topSpacer + 'px' }"></div>
 
     <div role="list">
-      <div v-for="(item, idx) in visibleItems" :key="item.id" class="virtual-item" :style="{ height: itemHeight + 'px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', padding: '8px' }">
-        <img :src="item.avatar" alt="" style="width:40px;height:40px;border-radius:4px;margin-right:12px;flex-shrink:0" />
+      <div v-for="(item, idx) in visibleItems" :key="item.id" class="virtual-item"
+        :style="{ height: itemHeight + 'px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', padding: '8px' }">
+        <img :src="item.avatar" alt=""
+          style="width:40px;height:40px;border-radius:4px;margin-right:12px;flex-shrink:0" />
         <div>
           <div style="font-weight:600">{{ item.text }}</div>
           <div style="font-size:12px;color:#666">id: {{ item.id }}</div>
@@ -18,9 +21,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useDebounce } from '~/composables/useDebounce'
 
 const props = withDefaults(defineProps<{
-  items: Array<{ id: number, [key:string]: any }>,
+  items: Array<{ id: number, [key: string]: any }>,
   itemHeight?: number,
   containerHeight?: number,
   buffer?: number
@@ -45,16 +49,19 @@ const visibleItems = computed(() => {
 const topSpacer = computed(() => startIndex.value * props.itemHeight)
 const bottomSpacer = computed(() => Math.max(0, (total.value - 1 - endIndex.value) * props.itemHeight))
 
+const dbFn = useDebounce(() => {
+  scrollTop.value = root.value.scrollTop
+}, 50)
 function onScroll() {
   if (!root.value) return
-  scrollTop.value = root.value.scrollTop
+  dbFn()
 }
 
 function scrollToIndex(index: number) {
-  console.log("root",root)
+  console.log("root", root)
   if (!root.value) return
   const clamped = Math.max(0, Math.min(index, total.value - 1));
-  console.log(clamped,"clamped")
+  console.log(clamped, "clamped")
   root.value.scrollTop = clamped * props.itemHeight
   scrollTop.value = root.value.scrollTop
 }
@@ -63,8 +70,8 @@ defineExpose({
   scrollToIndex
 })
 
-onMounted(() => {})
-onBeforeUnmount(() => {})
+onMounted(() => { })
+onBeforeUnmount(() => { })
 </script>
 
 <style scoped>
@@ -74,6 +81,7 @@ onBeforeUnmount(() => {})
   border-radius: 6px;
   background: white;
 }
+
 .virtual-item {
   border-bottom: 1px solid #f0f0f0;
 }
