@@ -1,11 +1,23 @@
 <template>
   <div ref="root" class="virtual-list-root" @scroll="onScroll"
-    :style="{ overflowY: 'auto', height: containerHeight + 'px' }">
-    <div :style="{ height: topSpacer + 'px' }"></div>
-
-    <div role="list">
-      <div v-for="(item, idx) in visibleItems" :key="item.id" class="virtual-item"
-        :style="{ height: itemHeight + 'px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', padding: '8px' }">
+    :style="{ overflowY: 'auto', height: containerHeight + 'px', position: 'relative' }">
+    
+    <!-- 固定总高度的容器 -->
+    <div :style="{ height: totalHeight + 'px', position: 'relative' }">
+      <div v-for="(item, idx) in visibleItems" 
+        :key="item.id" 
+        class="virtual-item"
+        :style="{
+          height: itemHeight + 'px',
+          boxSizing: 'border-box',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '8px',
+          position: 'absolute',
+          top: (startIndex + idx) * itemHeight + 'px',  // 关键点：定位
+          left: 0,
+          right: 0
+        }">
         <img :src="item.avatar" alt=""
           style="width:40px;height:40px;border-radius:4px;margin-right:12px;flex-shrink:0" />
         <div>
@@ -14,13 +26,11 @@
         </div>
       </div>
     </div>
-
-    <div :style="{ height: bottomSpacer + 'px' }"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed } from 'vue'
 import { useDebounce } from '~/composables/useDebounce'
 
 const props = withDefaults(defineProps<{
@@ -38,40 +48,39 @@ const root = ref<HTMLElement | null>(null)
 const scrollTop = ref(0)
 const total = computed(() => props.items.length)
 
+// 可视区渲染数量
 const itemsPerViewport = computed(() => Math.ceil(props.containerHeight / props.itemHeight))
-const startIndex = computed(() => Math.max(0, Math.floor(scrollTop.value / props.itemHeight) - props.buffer))
-const endIndex = computed(() => Math.min(total.value - 1, Math.ceil((scrollTop.value + props.containerHeight) / props.itemHeight) + props.buffer))
 
+// 计算起止索引
+const startIndex = computed(() => Math.max(0, Math.floor(scrollTop.value / props.itemHeight) - props.buffer))
+const endIndex = computed(() => Math.min(total.value - 1, startIndex.value + itemsPerViewport.value + props.buffer * 2))
+
+// 可见数据
 const visibleItems = computed(() => {
   return props.items.slice(startIndex.value, endIndex.value + 1)
 })
 
-const topSpacer = computed(() => startIndex.value * props.itemHeight)
-const bottomSpacer = computed(() => Math.max(0, (total.value - 1 - endIndex.value) * props.itemHeight))
+// 总高度
+const totalHeight = computed(() => total.value * props.itemHeight)
 
+// 滚动事件
 const dbFn = useDebounce(() => {
-  scrollTop.value = root.value.scrollTop
+  if (root.value) {
+    scrollTop.value = root.value.scrollTop
+  }
 }, 50)
 function onScroll() {
-  if (!root.value) return
   dbFn()
 }
 
+// 提供方法
 function scrollToIndex(index: number) {
-  console.log("root", root)
   if (!root.value) return
   const clamped = Math.max(0, Math.min(index, total.value - 1));
-  console.log(clamped, "clamped")
   root.value.scrollTop = clamped * props.itemHeight
   scrollTop.value = root.value.scrollTop
 }
-
-defineExpose({
-  scrollToIndex
-})
-
-onMounted(() => { })
-onBeforeUnmount(() => { })
+defineExpose({ scrollToIndex })
 </script>
 
 <style scoped>
@@ -80,6 +89,7 @@ onBeforeUnmount(() => { })
   border: 1px solid #e6e6e6;
   border-radius: 6px;
   background: white;
+  position: relative;
 }
 
 .virtual-item {
